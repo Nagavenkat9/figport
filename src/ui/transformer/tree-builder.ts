@@ -1,7 +1,7 @@
 // Converts the raw DOM tree into a FigmaNodeTree: geometry (Phase 2), auto-
 // layout/sizing/absolute-positioning (Phase 3), fills/strokes/effects/
-// corner radius/opacity/blend mode (Phase 4), and text (Phase 5). Images and
-// SVG come in a later phase and will extend this same function.
+// corner radius/opacity/blend mode (Phase 4), text (Phase 5), and images/SVG
+// (Phase 6).
 
 import { FigmaNodeTree, SizingValue } from "../../shared/types";
 import { RawDomNode, RawDomRect } from "../parser/dom-walker";
@@ -13,6 +13,7 @@ import {
 } from "./layout-mapper";
 import { mapVisualStyle } from "./style-mapper";
 import { mapTextAlign, mapLineHeight, mapLetterSpacing } from "./text-mapper";
+import { resolveImageSource, mapImageFit } from "./image-mapper";
 
 function nodeName(node: RawDomNode): string {
   const classes = node.className.trim();
@@ -47,6 +48,53 @@ export function buildTree(
   const sizing = computeSizing(node.style, parentMode, parentLayout);
   const visual = mapVisualStyle(node.style);
   const layoutPositioning = node.style.position === "absolute" ? ("ABSOLUTE" as const) : undefined;
+  const opacity = node.style.opacity < 1 ? node.style.opacity : undefined;
+
+  if (node.imageSrc) {
+    const source = resolveImageSource(node.imageSrc);
+    return {
+      type: "IMAGE",
+      name: nodeName(node),
+      x,
+      y,
+      width,
+      height,
+      fills: source
+        ? [
+            {
+              type: "IMAGE",
+              scaleMode: mapImageFit(node.style.objectFit),
+              imageUrl: source.url,
+              imageBytes: source.bytes,
+            },
+          ]
+        : [],
+      // A Rectangle can't hug content (nothing to hug) — same clamp reason
+      // as a FRAME without its own auto-layout.
+      layoutSizingHorizontal: clampHug(sizing.horizontal, false),
+      layoutSizingVertical: clampHug(sizing.vertical, false),
+      layoutPositioning,
+      opacity,
+      children: [],
+    };
+  }
+
+  if (node.svgString) {
+    return {
+      type: "SVG",
+      name: nodeName(node),
+      x,
+      y,
+      width,
+      height,
+      svgString: node.svgString,
+      layoutSizingHorizontal: clampHug(sizing.horizontal, false),
+      layoutSizingVertical: clampHug(sizing.vertical, false),
+      layoutPositioning,
+      opacity,
+      children: [],
+    };
+  }
 
   // A text-bearing leaf still gets its normal FRAME wrapper — same
   // auto-layout/background/border/padding/shadow handling as any other

@@ -1,8 +1,10 @@
 // Creates a FrameNode from geometry (Phase 2), applies its own auto-layout
 // config (Phase 3), and applies fills/strokes/effects/corner radius/
-// opacity/blend mode/clipping (Phase 4).
+// opacity/blend mode/clipping (Phase 4). Fill resolution (including image
+// fills, Phase 6) is async, so this builder is too.
 
-import { FigmaNodeTree, FigmaFill, FigmaEffect } from "../../shared/types";
+import { FigmaNodeTree, FigmaEffect } from "../../shared/types";
+import { resolvePaints } from "./image-builder";
 
 // Figma's real primaryAxisSizingMode/counterAxisSizingMode use "AUTO" for
 // hug (not "HUG" — that spelling is only used by layoutSizingHorizontal/
@@ -10,23 +12,6 @@ import { FigmaNodeTree, FigmaFill, FigmaEffect } from "../../shared/types";
 // two vocabularies up in the shared schema.
 function toSizingMode(v: "FIXED" | "HUG"): "FIXED" | "AUTO" {
   return v === "HUG" ? "AUTO" : "FIXED";
-}
-
-function toPaint(fill: FigmaFill): Paint {
-  if (fill.type === "GRADIENT_LINEAR" && fill.gradientStops && fill.gradientTransform) {
-    return {
-      type: "GRADIENT_LINEAR",
-      gradientTransform: fill.gradientTransform,
-      gradientStops: fill.gradientStops.map((s) => ({ position: s.position, color: s.color })),
-    } as GradientPaint;
-  }
-  // SOLID, and a neutral-gray fallback for fill kinds not implemented yet
-  // (IMAGE/GRADIENT_RADIAL land in a later phase).
-  return {
-    type: "SOLID",
-    color: fill.color ?? { r: 0.8, g: 0.8, b: 0.8 },
-    opacity: fill.opacity ?? 1,
-  } as SolidPaint;
 }
 
 function toEffect(effect: FigmaEffect): Effect {
@@ -41,7 +26,7 @@ function toEffect(effect: FigmaEffect): Effect {
   } as Effect;
 }
 
-export function buildFrameNode(node: FigmaNodeTree): FrameNode {
+export async function buildFrameNode(node: FigmaNodeTree): Promise<FrameNode> {
   const frame = figma.createFrame();
   frame.name = node.name;
   frame.resize(node.width, node.height);
@@ -67,7 +52,7 @@ export function buildFrameNode(node: FigmaNodeTree): FrameNode {
   }
 
   if (node.fills) {
-    frame.fills = node.fills.map(toPaint);
+    frame.fills = await resolvePaints(node.fills);
   }
 
   if (node.strokes && node.strokes.length > 0) {

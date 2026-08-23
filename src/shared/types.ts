@@ -23,7 +23,11 @@ export interface FigmaFill {
   // blueprint's original schema, added because GRADIENT_LINEAR fills can't
   // actually be applied without it.
   gradientTransform?: [[number, number, number], [number, number, number]];
-  imageBytes?: Uint8Array;
+  imageBytes?: Uint8Array; // already-decoded (data: URIs)
+  // Remote http(s) source — fetched sandbox-side, since only the sandbox
+  // has the plugin's declared network-access permission and the UI iframe
+  // may hit CORS the sandbox's fetch would not.
+  imageUrl?: string;
   scaleMode?: "FILL" | "FIT" | "CROP" | "TILE";
 }
 

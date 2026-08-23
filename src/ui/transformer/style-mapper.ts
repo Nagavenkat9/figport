@@ -5,6 +5,7 @@
 import { FigmaFill, FigmaStroke, FigmaEffect } from "../../shared/types";
 import { StyleInfo } from "../parser/style-extractor";
 import { parseColor, splitTopLevel, RgbaColor } from "./color-parser";
+import { extractBackgroundImageUrl, resolveImageSource, mapImageFit } from "./image-mapper";
 
 export interface VisualStyleOutput {
   fills: FigmaFill[];
@@ -129,9 +130,24 @@ function parseBoxShadows(value: string): FigmaEffect[] {
 export function mapVisualStyle(style: StyleInfo): VisualStyleOutput {
   const output: VisualStyleOutput = { fills: [], clipsContent: style.overflowHidden };
 
-  const gradient = style.backgroundImage !== "none" ? parseLinearGradient(style.backgroundImage) : null;
+  const hasBackgroundImage = style.backgroundImage !== "none";
+  const gradient = hasBackgroundImage ? parseLinearGradient(style.backgroundImage) : null;
+  const bgImageUrl = !gradient && hasBackgroundImage ? extractBackgroundImageUrl(style.backgroundImage) : null;
+
   if (gradient) {
     output.fills = [gradient];
+  } else if (bgImageUrl) {
+    const source = resolveImageSource(bgImageUrl);
+    if (source) {
+      output.fills = [
+        {
+          type: "IMAGE",
+          scaleMode: mapImageFit(style.backgroundSize),
+          imageUrl: source.url,
+          imageBytes: source.bytes,
+        },
+      ];
+    }
   } else {
     const bg = parseColor(style.backgroundColor);
     if (bg && bg.a > 0) {

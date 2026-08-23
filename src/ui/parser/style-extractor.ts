@@ -46,6 +46,10 @@ export interface StyleInfo {
   lineHeight: string; // e.g. "24px" or "normal"
   letterSpacing: string; // e.g. "0.5px" or "normal"
   textAlign: string;
+
+  // Images (Phase 6)
+  backgroundSize: string; // e.g. "cover", "contain", "auto"
+  objectFit: string; // only meaningful on <img>/<video>, harmless elsewhere
 }
 
 function getSpecifiedLength(el: Element, prop: "width" | "height"): string | undefined {
@@ -123,5 +127,8 @@ export function extractStyle(el: Element): StyleInfo {
     lineHeight: cs.lineHeight,
     letterSpacing: cs.letterSpacing,
     textAlign: cs.textAlign,
+
+    backgroundSize: cs.backgroundSize,
+    objectFit: cs.objectFit,
   };
 }
