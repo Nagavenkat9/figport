@@ -37,8 +37,13 @@
   <textarea id="html-input" placeholder="Paste HTML here..."></textarea>
   <button id="convert-btn">Convert</button>
 
-  <!-- Hidden render iframe: loads pasted HTML to compute real layout -->
-  <iframe id="render-frame" style="display:none" sandbox="allow-same-origin"></iframe>
+  <!-- Render iframe: positioned off-screen (not display:none) so the
+       browser still lays it out and getBoundingClientRect stays accurate -->
+  <iframe
+    id="render-frame"
+    sandbox="allow-same-origin"
+    style="position:absolute; top:-10000px; left:-10000px; width:1440px; height:800px; border:none;"
+  ></iframe>
 
   <script>
     __UI_SCRIPT__
