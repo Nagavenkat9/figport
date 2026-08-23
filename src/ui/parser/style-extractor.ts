@@ -28,6 +28,19 @@ export interface StyleInfo {
   flexGrow: number;
   specifiedWidth?: string;
   specifiedHeight?: string;
+
+  // Visual (Phase 4) — all resolve unambiguously via getComputedStyle, no
+  // specified-vs-computed ambiguity like width/height has.
+  backgroundColor: string;
+  backgroundImage: string; // "none" or e.g. "linear-gradient(...)"
+  borderWidth: number;
+  borderColor: string;
+  borderStyle: string;
+  cornerRadii: [number, number, number, number]; // TL, TR, BR, BL
+  boxShadow: string; // "none" or a comma-separated shadow list
+  opacity: number;
+  mixBlendMode: string;
+  overflowHidden: boolean;
 }
 
 function getSpecifiedLength(el: Element, prop: "width" | "height"): string | undefined {
@@ -82,5 +95,24 @@ export function extractStyle(el: Element): StyleInfo {
     flexGrow: parseFloat(cs.flexGrow) || 0,
     specifiedWidth: getSpecifiedLength(el, "width"),
     specifiedHeight: getSpecifiedLength(el, "height"),
+
+    backgroundColor: cs.backgroundColor,
+    backgroundImage: cs.backgroundImage,
+    // Representative of all four sides — Figma strokes don't support
+    // differing per-side widths/colors in a single strokes[] array any more
+    // simply than this, so a uniform border is the practical target here.
+    borderWidth: parseFloat(cs.borderTopWidth) || 0,
+    borderColor: cs.borderTopColor,
+    borderStyle: cs.borderTopStyle,
+    cornerRadii: [
+      parseFloat(cs.borderTopLeftRadius) || 0,
+      parseFloat(cs.borderTopRightRadius) || 0,
+      parseFloat(cs.borderBottomRightRadius) || 0,
+      parseFloat(cs.borderBottomLeftRadius) || 0,
+    ],
+    boxShadow: cs.boxShadow,
+    opacity: parseFloat(cs.opacity),
+    mixBlendMode: cs.mixBlendMode,
+    overflowHidden: cs.overflowX === "hidden" || cs.overflowY === "hidden",
   };
 }

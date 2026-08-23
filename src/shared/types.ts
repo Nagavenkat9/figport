@@ -19,6 +19,10 @@ export interface FigmaFill {
     position: number;
     color: { r: number; g: number; b: number; a: number };
   }[];
+  // Required by Figma's GradientPaint to know direction/extent — not in the
+  // blueprint's original schema, added because GRADIENT_LINEAR fills can't
+  // actually be applied without it.
+  gradientTransform?: [[number, number, number], [number, number, number]];
   imageBytes?: Uint8Array;
   scaleMode?: "FILL" | "FIT" | "CROP" | "TILE";
 }

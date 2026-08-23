@@ -1,6 +1,7 @@
-// Converts the raw DOM tree into a FigmaNodeTree: geometry (Phase 2) plus
-// auto-layout, sizing, and absolute-positioning intent (Phase 3). Fills,
-// strokes, and text come in later phases and will extend this same function.
+// Converts the raw DOM tree into a FigmaNodeTree: geometry (Phase 2), auto-
+// layout/sizing/absolute-positioning (Phase 3), and fills/strokes/effects/
+// corner radius/opacity/blend mode (Phase 4). Text comes in a later phase
+// and will extend this same function.
 
 import { FigmaNodeTree, SizingValue } from "../../shared/types";
 import { RawDomNode, RawDomRect } from "../parser/dom-walker";
@@ -10,6 +11,7 @@ import {
   ParentLayoutContext,
   NO_PARENT_CONTEXT,
 } from "./layout-mapper";
+import { mapVisualStyle } from "./style-mapper";
 
 function nodeName(node: RawDomNode): string {
   const classes = node.className.trim();
@@ -37,6 +39,7 @@ export function buildTree(
 
   const autoLayout = buildAutoLayout(node.style);
   const sizing = computeSizing(node.style, parentMode, parentLayout);
+  const visual = mapVisualStyle(node.style);
 
   const childParentLayout: ParentLayoutContext = {
     isFlexParent: node.style.display === "flex" || node.style.display === "inline-flex",
@@ -54,6 +57,7 @@ export function buildTree(
     layoutSizingHorizontal: clampHug(sizing.horizontal, !!autoLayout),
     layoutSizingVertical: clampHug(sizing.vertical, !!autoLayout),
     layoutPositioning: node.style.position === "absolute" ? "ABSOLUTE" : undefined,
+    ...visual,
     children: node.children.map((child) =>
       buildTree(child, node.rect, childParentLayout, autoLayout?.mode as "HORIZONTAL" | "VERTICAL" | undefined)
     ),
