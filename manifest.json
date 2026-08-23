@@ -1,0 +1,12 @@
+{
+  "name": "FigPort",
+  "id": "figport-dev-local",
+  "api": "1.0.0",
+  "main": "build/code.js",
+  "ui": "build/ui.html",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": ["*"]
+  }
+}
