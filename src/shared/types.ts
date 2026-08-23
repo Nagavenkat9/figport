@@ -64,6 +64,19 @@ export interface FigmaAutoLayout {
   counterAxisSizing: "FIXED" | "HUG";
 }
 
+export interface FigmaTextRun {
+  characters: string;
+  color: { r: number; g: number; b: number; a: number };
+  fontFamily: string; // raw CSS font-family text; resolved against Figma's
+                       // available fonts sandbox-side, since only the
+                       // sandbox can call figma.listAvailableFontsAsync()
+  fontWeight: number;
+  italic: boolean;
+  fontSize: number;
+  underline: boolean;
+  strikethrough: boolean;
+}
+
 export interface FigmaNodeTree {
   type: FigmaNodeType;
   name: string;
@@ -105,6 +118,12 @@ export interface FigmaNodeTree {
   letterSpacing?: { value: number; unit: "PIXELS" | "PERCENT" };
   textAlignHorizontal?: "LEFT" | "CENTER" | "RIGHT" | "JUSTIFIED";
   textDecoration?: "NONE" | "UNDERLINE" | "STRIKETHROUGH";
+  // Per-character-range styling (a bolded word inside a paragraph, a
+  // differently-colored link, etc). The base characters/fontSize/etc.
+  // fields above are a single-style fallback; when this is present the
+  // sandbox applies each run's own font/size/color/decoration across its
+  // slice of `characters` instead.
+  textRuns?: FigmaTextRun[];
 
   // Image (Phase 6+, IMAGE type only)
   imageBytes?: Uint8Array;

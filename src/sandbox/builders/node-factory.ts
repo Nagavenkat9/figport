@@ -1,15 +1,19 @@
 // Routes each FigmaNodeTree node to the right builder and recreates the
-// tree's parent/child structure in Figma. Only "FRAME" is implemented so
-// far; other node types are added as their builders land (text-builder in
-// Phase 5, image-builder/shape-builder in Phase 6).
+// tree's parent/child structure in Figma. FRAME (Phase 2-4) and TEXT
+// (Phase 5) are implemented; image/shape land in Phase 6. Async throughout
+// because text-builder.ts must await figma.loadFontAsync() before it can
+// safely set characters or apply per-range styling.
 
 import { FigmaNodeTree } from "../../shared/types";
 import { buildFrameNode } from "./frame-builder";
+import { buildTextNode } from "./text-builder";
 
-function createNode(node: FigmaNodeTree): SceneNode | null {
+async function createNode(node: FigmaNodeTree): Promise<SceneNode | null> {
   switch (node.type) {
     case "FRAME":
       return buildFrameNode(node);
+    case "TEXT":
+      return buildTextNode(node);
     default:
       console.warn(`FigPort: node type "${node.type}" not yet implemented, skipping`);
       return null;
@@ -18,14 +22,15 @@ function createNode(node: FigmaNodeTree): SceneNode | null {
 
 // layoutSizingHorizontal/Vertical and layoutPositioning only mean something
 // (and are only settable without Figma throwing) once a node actually has
-// an auto-layout parent, so this runs after appendChild, not before.
+// an auto-layout parent, so this runs after appendChild, not before. Both
+// FRAME and TEXT support these properties as auto-layout children.
 function applyParentDependentLayout(
   created: SceneNode,
   node: FigmaNodeTree,
   parent: FrameNode | PageNode
 ): void {
   if (!("layoutMode" in parent) || parent.layoutMode === "NONE") return;
-  if (created.type !== "FRAME") return; // only frames support this so far
+  if (created.type !== "FRAME" && created.type !== "TEXT") return;
 
   if (node.layoutPositioning === "ABSOLUTE") {
     created.layoutPositioning = "ABSOLUTE";
@@ -39,11 +44,11 @@ function applyParentDependentLayout(
   }
 }
 
-export function buildTreeIntoFigma(
+export async function buildTreeIntoFigma(
   node: FigmaNodeTree,
   parent: FrameNode | PageNode
-): SceneNode | null {
-  const created = createNode(node);
+): Promise<SceneNode | null> {
+  const created = await createNode(node);
   if (!created) return null;
 
   parent.appendChild(created);
@@ -51,7 +56,7 @@ export function buildTreeIntoFigma(
 
   if (node.children && node.children.length > 0 && created.type === "FRAME") {
     for (const child of node.children) {
-      buildTreeIntoFigma(child, created);
+      await buildTreeIntoFigma(child, created);
     }
   }
 

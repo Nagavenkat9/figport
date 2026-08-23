@@ -41,6 +41,11 @@ export interface StyleInfo {
   opacity: number;
   mixBlendMode: string;
   overflowHidden: boolean;
+
+  // Text (Phase 5)
+  lineHeight: string; // e.g. "24px" or "normal"
+  letterSpacing: string; // e.g. "0.5px" or "normal"
+  textAlign: string;
 }
 
 function getSpecifiedLength(el: Element, prop: "width" | "height"): string | undefined {
@@ -114,5 +119,9 @@ export function extractStyle(el: Element): StyleInfo {
     opacity: parseFloat(cs.opacity),
     mixBlendMode: cs.mixBlendMode,
     overflowHidden: cs.overflowX === "hidden" || cs.overflowY === "hidden",
+
+    lineHeight: cs.lineHeight,
+    letterSpacing: cs.letterSpacing,
+    textAlign: cs.textAlign,
   };
 }

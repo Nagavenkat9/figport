@@ -1,14 +1,14 @@
-// Phase 2: receives a FigmaNodeTree from the UI and builds it into nested
-// frames on canvas.
+// Receives a FigmaNodeTree from the UI and builds it into nested frames
+// (and, since Phase 5, text nodes) on canvas.
 
 import { PluginMessage } from "../shared/types";
 import { buildTreeIntoFigma } from "./builders/node-factory";
 
 figma.showUI(__html__, { width: 360, height: 420 });
 
-figma.ui.onmessage = (msg: PluginMessage) => {
+figma.ui.onmessage = async (msg: PluginMessage) => {
   if (msg.type === "CREATE_NODES") {
-    const root = buildTreeIntoFigma(msg.tree, figma.currentPage);
+    const root = await buildTreeIntoFigma(msg.tree, figma.currentPage);
     if (!root) {
       figma.notify("FigPort: nothing visible to convert");
       return;
