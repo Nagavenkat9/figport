@@ -1,0 +1,14 @@
+<style>
+  .byline::before { content: "By "; color: #888; }
+</style>
+<div style="width:640px; padding:32px; display:flex; flex-direction:column; gap:12px;">
+  <h1 style="font-size:32px; font-weight:700;">Why rule-based conversion works</h1>
+  <p class="byline" style="font-size:13px; color:#888;">Jane Doe</p>
+  <p style="font-size:16px; line-height:1.6;">Most AI-generated pages use a <b>small, predictable</b> set of CSS patterns — flexbox, solid colors, and simple typography. That means a <i>rule-based</i> engine can cover the overwhelming majority of cases without ever calling an external model.</p>
+  <p style="font-size:16px; line-height:1.6;">A <a href="#" style="color:#2575fc; text-decoration:underline;">well-scoped mapping table</a> beats a general-purpose one every time.</p>
+  <ol>
+    <li>Walk the DOM</li>
+    <li>Map CSS to Figma properties</li>
+    <li>Build the node tree</li>
+  </ol>
+</div>

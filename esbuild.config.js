@@ -14,6 +14,8 @@ async function buildOnce() {
     bundle: true,
     outfile: "build/code.js",
     target: "es2019",
+    minify: true,
+    treeShaking: true,
   });
 
   // UI (iframe, has DOM)
@@ -22,6 +24,8 @@ async function buildOnce() {
     bundle: true,
     write: false,
     target: "es2019",
+    minify: true,
+    treeShaking: true,
   });
   const uiScript = uiBundle.outputFiles[0].text;
 
@@ -29,7 +33,11 @@ async function buildOnce() {
   const finalHtml = template.replace("__UI_SCRIPT__", uiScript);
   fs.writeFileSync("build/ui.html", finalHtml);
 
-  console.log(`[${new Date().toLocaleTimeString()}] build complete`);
+  const codeSize = fs.statSync("build/code.js").size;
+  const htmlSize = fs.statSync("build/ui.html").size;
+  console.log(
+    `[${new Date().toLocaleTimeString()}] build complete — code.js ${codeSize}B, ui.html ${htmlSize}B`
+  );
 }
 
 if (watch) {

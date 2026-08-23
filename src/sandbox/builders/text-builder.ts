@@ -68,12 +68,29 @@ async function resolveFont(cssFontFamily: string, weight: number, italic: boolea
   return (regular ?? familyMatches[0]).fontName;
 }
 
+// Real pages commonly reuse the same 2-3 font/style combinations across
+// dozens of text nodes. figma.loadFontAsync() for a font already loaded is
+// cheap but not free — skip the repeat call entirely (Phase 8, task 8.2:
+// minimize redundant work across a page's worth of node creation).
+const loadedFontKeys = new Set<string>();
+function fontKey(f: FontName): string {
+  return `${f.family}::${f.style}`;
+}
+
 async function loadFontSafe(fontName: FontName): Promise<FontName> {
+  const key = fontKey(fontName);
+  if (loadedFontKeys.has(key)) return fontName;
+
   try {
     await figma.loadFontAsync(fontName);
+    loadedFontKeys.add(key);
     return fontName;
   } catch {
-    await figma.loadFontAsync(FALLBACK_FONT);
+    const fallbackKey = fontKey(FALLBACK_FONT);
+    if (!loadedFontKeys.has(fallbackKey)) {
+      await figma.loadFontAsync(FALLBACK_FONT);
+      loadedFontKeys.add(fallbackKey);
+    }
     return FALLBACK_FONT;
   }
 }
