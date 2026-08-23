@@ -53,19 +53,39 @@ function applyParentDependentLayout(
   }
 }
 
+// One malformed node (bad SVG that still throws past svg-builder's own
+// guard, an unexpected style combination, etc.) should not take down the
+// rest of the tree with it (task 7.8) — skip just that node/subtree and
+// keep going, logging why.
 export async function buildTreeIntoFigma(
   node: FigmaNodeTree,
   parent: FrameNode | PageNode
 ): Promise<SceneNode | null> {
-  const created = await createNode(node);
+  let created: SceneNode | null;
+  try {
+    created = await createNode(node);
+  } catch (e) {
+    console.warn(`FigPort: failed to build "${node.name}" (${node.type}), skipping`, e);
+    return null;
+  }
   if (!created) return null;
 
-  parent.appendChild(created);
-  applyParentDependentLayout(created, node, parent);
+  try {
+    parent.appendChild(created);
+    applyParentDependentLayout(created, node, parent);
+  } catch (e) {
+    console.warn(`FigPort: failed to attach "${node.name}" to its parent, skipping`, e);
+    created.remove();
+    return null;
+  }
 
   if (node.children && node.children.length > 0 && created.type === "FRAME") {
     for (const child of node.children) {
-      await buildTreeIntoFigma(child, created);
+      try {
+        await buildTreeIntoFigma(child, created);
+      } catch (e) {
+        console.warn(`FigPort: failed to build a child of "${node.name}", skipping`, e);
+      }
     }
   }
 

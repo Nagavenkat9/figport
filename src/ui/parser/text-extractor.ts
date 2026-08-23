@@ -66,6 +66,14 @@ function makeRun(text: string, el: Element, isBreak: boolean): FigmaTextRun {
   };
 }
 
+// Builds a run for a synthesized list-item marker ("• " or "1. "), styled
+// to match the <li>'s own font/color since real bullets/numbers aren't part
+// of the DOM (they're rendered by the browser's own ::marker box, which has
+// no text-node representation to walk) — see dom-walker.ts's list handling.
+export function makeMarkerRun(marker: string, el: Element): FigmaTextRun {
+  return makeRun(marker, el, false);
+}
+
 // Walks the leaf element's actual child nodes (not just .children) so each
 // text run picks up the computed style of its immediate parent — which
 // already reflects CSS inheritance/overrides at that exact point, however

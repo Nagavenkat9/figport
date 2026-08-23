@@ -1,5 +1,5 @@
-// Phase 2: loads pasted HTML into the hidden iframe, walks the rendered DOM,
-// builds a FigmaNodeTree, and hands it to the sandbox.
+// Loads pasted HTML into the hidden iframe, walks the rendered DOM, builds
+// a FigmaNodeTree, and hands it to the sandbox.
 
 import { PluginMessage } from "../shared/types";
 import { walkDom } from "./parser/dom-walker";
@@ -34,6 +34,14 @@ convertBtn.addEventListener("click", async () => {
     return;
   }
 
+  // Lightweight progress feedback (task 7.7). A real percentage bar isn't
+  // meaningful here — the conversion isn't naturally divisible into steps
+  // with predictable relative cost — so a disabled/busy state communicates
+  // "working" honestly without fabricating false precision.
+  const originalLabel = convertBtn.textContent;
+  convertBtn.disabled = true;
+  convertBtn.textContent = "Converting…";
+
   try {
     const doc = await loadIntoIframe(html);
     const raw = walkDom(doc.body);
@@ -45,5 +53,8 @@ convertBtn.addEventListener("click", async () => {
     send({ type: "CREATE_NODES", tree });
   } catch (err) {
     send({ type: "CONVERT_ERROR", message: err instanceof Error ? err.message : String(err) });
+  } finally {
+    convertBtn.disabled = false;
+    convertBtn.textContent = originalLabel;
   }
 });
