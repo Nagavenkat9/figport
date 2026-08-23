@@ -1,6 +1,8 @@
-// Phase 2: traverses the rendered DOM inside the hidden iframe and produces
-// a plain-object tree of geometry + tag/class info. Style extraction and
-// text extraction are separate concerns added in later phases.
+// Traverses the rendered DOM inside the hidden iframe and produces a plain-
+// object tree of geometry + tag/class + style info. Text extraction is a
+// separate concern added in a later phase.
+
+import { extractStyle, StyleInfo } from "./style-extractor";
 
 export interface RawDomRect {
   x: number;
@@ -13,6 +15,7 @@ export interface RawDomNode {
   tagName: string;
   className: string;
   rect: RawDomRect;
+  style: StyleInfo;
   children: RawDomNode[];
 }
 
@@ -54,6 +57,7 @@ export function walkDom(element: Element): RawDomNode | null {
       width: domRect.width,
       height: domRect.height,
     },
+    style: extractStyle(element),
     children,
   };
 }

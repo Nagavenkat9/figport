@@ -38,15 +38,26 @@ export interface FigmaEffect {
   spread?: number;
 }
 
+// Sizing for a node inside ITS OWN parent's auto-layout (the real Figma API
+// property is `layoutSizingHorizontal`/`layoutSizingVertical`).
+export type SizingValue = "FIXED" | "HUG" | "FILL";
+
 export interface FigmaAutoLayout {
   mode: "HORIZONTAL" | "VERTICAL" | "NONE";
   wrap?: "WRAP" | "NO_WRAP";
   gap: number;
+  counterAxisSpacing?: number; // spacing between wrapped lines, only used when wrap is "WRAP"
   padding: [number, number, number, number]; // T, R, B, L
   primaryAxisAlign: "MIN" | "CENTER" | "MAX" | "SPACE_BETWEEN";
-  counterAxisAlign: "MIN" | "CENTER" | "MAX" | "STRETCH";
-  primaryAxisSizing: "FIXED" | "HUG" | "FILL";
-  counterAxisSizing: "FIXED" | "HUG" | "FILL";
+  // No "STRETCH" here — Figma's counterAxisAlignItems doesn't support it.
+  // CSS align-items:stretch is expressed per-child instead, via this node's
+  // own layoutSizingHorizontal/Vertical = "FILL" (see SizingValue above).
+  counterAxisAlign: "MIN" | "CENTER" | "MAX";
+  // Whether THIS frame hugs/fixes around its own children. Figma's real API
+  // calls this primaryAxisSizingMode/counterAxisSizingMode with values
+  // "FIXED" | "AUTO" (not "HUG") — translated at the point of use.
+  primaryAxisSizing: "FIXED" | "HUG";
+  counterAxisSizing: "FIXED" | "HUG";
 }
 
 export interface FigmaNodeTree {
@@ -63,7 +74,14 @@ export interface FigmaNodeTree {
   // Layout (Phase 3+, frames only)
   autoLayout?: FigmaAutoLayout;
   clipsContent?: boolean;
-  positioning?: "AUTO" | "ABSOLUTE";
+  // How this node sizes itself inside ITS PARENT's auto-layout (distinct
+  // from autoLayout.primaryAxisSizing/counterAxisSizing above, which is
+  // about this node's OWN children).
+  layoutSizingHorizontal?: SizingValue;
+  layoutSizingVertical?: SizingValue;
+  // Takes this node out of the parent's auto-layout flow, using its
+  // explicit x/y instead (CSS position:absolute).
+  layoutPositioning?: "AUTO" | "ABSOLUTE";
 
   // Visual (Phase 4+)
   fills?: FigmaFill[];
